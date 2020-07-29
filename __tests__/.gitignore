@@ -1,0 +1,26 @@
+# Composer libraries
+/vendor
+/reports
+
+# Sass cache
+.sass-cache
+
+# OS artifacts
+.DS_Store
+
+# Editors
+*.vscode
+*~
+\#*\#
+*.swp
+*.swn
+*.swo
+
+# Build
+*.travis.yml
+
+# Attachments directory
+#docs/* 
+*.db
+*.log
+*.*
