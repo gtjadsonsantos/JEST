@@ -1,0 +1,83 @@
+version: '3.6'
+
+volumes:
+  mqtt: {}
+  config: {}
+  mariadb: {}
+  esphome: {}
+
+services:
+  mariadb:
+    image: mariadb 
+    hostname: mariadb
+    restart: always
+    volumes:
+      - mariadb:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_USER: ${MYSQL_USER:-unisec}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-unicontrol}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: unicontrol
+
+  esphome:
+    image: esphome/esphome
+    hostname: esphome
+    volumes:
+      - esphome:/config
+    restart: always
+    ports: 
+      - 6052:6052
+    environment:
+      USERNAME: esphome
+      PASSWORD: unisec
+
+  hassio:
+    image: homeassistant/home-assistant
+    hostname: hassio
+    volumes:
+      - ${PWD}/config:/config
+    restart: always
+    #network_mode: host
+    ports:
+      - "80:8123"
+      - "8123:8123"
+    depends_on:
+      - mariadb
+    environment:
+      TZ: "America/Sao_Paulo"
+      DB_URL: mysql://unisec:unicontrol@mariadb/unicontrol?charset=utf8
+      DB_USER: ${DB_USER:-unisec}
+      DB_DATABASE: ${DATABASE:-unicontrol}
+      DB_PASSWORD: ${DB_PASSWORD:-unicontrol}
+      MQTT_HOST: ${MQTT_PASSWORD:-root}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-root}
+
+  mqtt: 
+    image: homeassistant/amd64-addon-mosquitto
+    hostname: mqtt
+    #restart: always
+    volumes:
+      - ./addons/mosquitto:/data:rw
+    ports:
+      - "1883:1883"
+      - "1884:1884"
+      - "5050:5050"
+    depends_on:
+      - hassio
+      - mariadb
+    environment:
+      TZ: "America/Sao_Paulo"
+
+  docs:
+    hostname: docs 
+    image: unisec/vuepress
+    command: build
+    ports:
+      - "8000:8080"
+    volumes:
+      - ./docs:/docs
+    environment:
+      ERROR_LOG_LEVEL: debug
+    working_dir: /docs
